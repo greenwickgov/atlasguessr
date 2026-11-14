@@ -1,0 +1,232 @@
+(() => {
+  "use strict";
+  if (window.top === window) return;
+  // Google embed URL matches also cover other sites. Check the embedding
+  // origin before injecting styles, intercepting keys, or hooking Google.
+  // Firefox lacks ancestorOrigins, so use its document referrer instead.
+  const embeddingOrigin = location.ancestorOrigins?.[0] ?? document.referrer;
+  if (embeddingOrigin && !allowed(embeddingOrigin)) return;
+  // With a stripped referrer, capture panoramas without changing their
+  // behavior until the existing GeoDuels configure handshake authenticates us.
+  let enhancementsEnabled = allowed(embeddingOrigin);
+  const VERSION = 1, EXTENSION_VERSION = "0.1.5", EXTENSION = "geoduels-extension", APP = "geoduels-app";
+  const STYLE_ID = "geoduels-hidden-streetnames";
+  const CHROME_STYLE_ID = "geoduels-hidden-native-chrome";
+  const instances = new Set();
+  const initialPano = new URLSearchParams(location.search).get("pano");
+  let parentTrusted = false;
+  let readySent = false;
+  let config = readConfig() || { ruleset: "moving", streetNames: "shown" };
+  function allowed(origin) {
+    try {
+      const host = new URL(origin).hostname;
+      return host === "geoduels.io" || host.endsWith(".geoduels.io") || host === "localhost" || host === "127.0.0.1";
+    } catch {
+      return false;
+    }
+  }
+  function normalizeRuleset(value) {
+    return value === "no_move" || value === "nmpz" ? value : "moving";
+  }
+  function normalizeStreetNames(value) {
+    return value === "hidden" ? "hidden" : "shown";
+  }
+  function readConfig() {
+    try {
+      const raw = new URLSearchParams(location.hash.slice(1)).get("geoduels");
+      const value = raw ? JSON.parse(raw) : null;
+      return value?.version === VERSION
+        ? { ruleset: normalizeRuleset(value.ruleset), streetNames: normalizeStreetNames(value.streetNames) }
+        : null;
+    } catch {
+      return null;
+    }
+  }
+  function post(message) {
+    if (!parentTrusted) return;
+    window.top.postMessage({ source: EXTENSION, version: VERSION, extensionVersion: EXTENSION_VERSION, ...message }, "*");
+  }
+  function ensureStyle(id, css) {
+    let style = document.getElementById(id);
+    if (!style) {
+      style = document.createElement("style");
+      style.id = id;
+      (document.head || document.documentElement).appendChild(style);
+    }
+    style.textContent = css;
+  }
+  function syncChromeStyle() {
+    if (!enhancementsEnabled) return;
+    ensureStyle(
+      CHROME_STYLE_ID,
+      ".gm-compass,.gm-bundled-control,button[aria-label='Zoom in'],button[aria-label='Zoom out'],button[title='Zoom in'],button[title='Zoom out']{display:none!important}",
+    );
+  }
+  function syncAddressStyle() {
+    if (!enhancementsEnabled) return;
+    let style = document.getElementById(STYLE_ID);
+    if (config.streetNames !== "hidden") {
+      style?.remove();
+      return;
+    }
+    ensureStyle(STYLE_ID, ".gm-iv-address,.gm-iv-address-description,.gm-iv-address-link,.gm-iv-profile-url{display:none!important}");
+  }
+  function options(extra) {
+    if (!enhancementsEnabled) return extra;
+    const hidden = config.streetNames === "hidden";
+    const noMove = config.ruleset === "no_move" || config.ruleset === "nmpz";
+    return {
+      ...(extra || {}),
+      addressControl: !hidden,
+      showRoadLabels: !hidden,
+      clickToGo: !noMove,
+      linksControl: !noMove,
+      panControl: false,
+      zoomControl: false,
+    };
+  }
+  function latLng(value) {
+    if (!value) return null;
+    const lat = typeof value.lat === "function" ? value.lat() : value.lat;
+    const lng = typeof value.lng === "function" ? value.lng() : value.lng;
+    return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+  }
+  function samePosition(a, b) {
+    const one = latLng(a), two = latLng(b);
+    return !!one && !!two && Math.abs(one.lat - two.lat) < 0.0000001 && Math.abs(one.lng - two.lng) < 0.0000001;
+  }
+  function isMovementKey(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey) return false;
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    return ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(key);
+  }
+  function blockMovementKey(event) {
+    if (!enhancementsEnabled || config.ruleset !== "no_move" || !isMovementKey(event)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+  function rememberSpawn(panorama) {
+    const state = panorama.__geoduels;
+    if (!state.spawnPano) state.spawnPano = panorama.getPano?.() || initialPano || null;
+    if (!state.spawnPosition) state.spawnPosition = panorama.getPosition?.() || null;
+  }
+  function reportHeading(panorama) {
+    const heading = panorama.getPov?.().heading;
+    if (Number.isFinite(heading)) post({ type: "pov", heading });
+  }
+  function apply(panorama) {
+    if (!enhancementsEnabled) return;
+    const state = panorama.__geoduels;
+    state.original.setOptions?.call(panorama, options());
+    syncChromeStyle();
+    syncAddressStyle();
+    if (config.ruleset !== "no_move") return;
+    rememberSpawn(panorama);
+    if (state.spawnPano && panorama.getPano?.() !== state.spawnPano) state.original.setPano?.call(panorama, state.spawnPano);
+    const current = panorama.getPosition?.();
+    if (state.spawnPosition && current && !samePosition(current, state.spawnPosition)) state.original.setPosition?.call(panorama, state.spawnPosition);
+  }
+  function protectedValue(key, value) {
+    if (!enhancementsEnabled) return value;
+    if (key === "panControl" || key === "zoomControl") return false;
+    if (config.streetNames === "hidden" && (key === "showRoadLabels" || key === "addressControl")) return false;
+    if ((config.ruleset === "no_move" || config.ruleset === "nmpz") && (key === "clickToGo" || key === "linksControl")) return false;
+    return value;
+  }
+  function register(panorama) {
+    if (!panorama || panorama.__geoduels) return panorama;
+    const original = {
+      set: panorama.set,
+      setOptions: panorama.setOptions,
+      setPano: panorama.setPano,
+      setPosition: panorama.setPosition,
+    };
+    panorama.__geoduels = { original, spawnPano: null, spawnPosition: null };
+    panorama.set = function (key, value) {
+      return original.set?.call(this, key, protectedValue(key, value));
+    };
+    panorama.setOptions = function (value) {
+      return original.setOptions?.call(this, options(value));
+    };
+    panorama.setPano = function (value) {
+      const spawn = panorama.__geoduels.spawnPano;
+      return original.setPano?.call(this, enhancementsEnabled && config.ruleset === "no_move" && spawn ? spawn : value);
+    };
+    panorama.setPosition = function (value) {
+      const spawn = panorama.__geoduels.spawnPosition;
+      const locked = enhancementsEnabled && config.ruleset === "no_move" && spawn && !samePosition(value, spawn);
+      return original.setPosition?.call(this, locked ? spawn : value);
+    };
+    instances.add(panorama);
+    rememberSpawn(panorama);
+    apply(panorama);
+    panorama.addListener?.("pov_changed", () => reportHeading(panorama));
+    panorama.addListener?.("status_changed", () => {
+      rememberSpawn(panorama);
+      apply(panorama);
+      reportHeading(panorama);
+    });
+    panorama.addListener?.("pano_changed", () => apply(panorama));
+    panorama.addListener?.("position_changed", () => apply(panorama));
+    setTimeout(() => reportHeading(panorama), 0);
+    return panorama;
+  }
+  function wrapConstructor(Constructor) {
+    if (typeof Constructor !== "function" || Constructor.__geoduelsWrapped) return Constructor;
+    const wrapped = new Proxy(Constructor, {
+      construct(target, args, newTarget) {
+        const next = [...args];
+        next[1] = options(next[1]);
+        return register(Reflect.construct(target, next, newTarget));
+      },
+    });
+    wrapped.__geoduelsWrapped = true;
+    return wrapped;
+  }
+  function hook(object, key, callback) {
+    let value = object[key];
+    const assign = (next) => {
+      value = callback(next) || next;
+    };
+    if (value !== undefined) assign(value);
+    try {
+      Object.defineProperty(object, key, { configurable: true, get: () => value, set: assign });
+    } catch {
+      assign(value);
+    }
+  }
+  function hookGoogle(google) {
+    if (!google || typeof google !== "object") return;
+    hook(google, "maps", (maps) => {
+      if (maps && typeof maps === "object") hook(maps, "StreetViewPanorama", wrapConstructor);
+    });
+  }
+  addEventListener("message", (event) => {
+    if (
+      event.source !== window.top ||
+      !allowed(event.origin) ||
+      event.data?.source !== APP ||
+      event.data?.version !== VERSION ||
+      event.data?.type !== "configure"
+    ) return;
+    parentTrusted = true;
+    enhancementsEnabled = true;
+    config = { ruleset: normalizeRuleset(event.data.ruleset), streetNames: normalizeStreetNames(event.data.streetNames) };
+    syncChromeStyle();
+    syncAddressStyle();
+    instances.forEach(apply);
+    instances.forEach(reportHeading);
+    if (!readySent) {
+      readySent = true;
+      post({ type: "ready", capabilities: { heading: true, roadLabels: true } });
+    }
+    post({ type: "configured", ...config });
+  });
+  ["keydown", "keyup"].forEach((type) => {
+    window.addEventListener(type, blockMovementKey, true);
+    document.addEventListener(type, blockMovementKey, true);
+  });
+  syncChromeStyle();
+  syncAddressStyle();
+  hook(window, "google", hookGoogle);
+})();

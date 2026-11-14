@@ -1,0 +1,53 @@
+@font-face {font-family: 'Barlow Condensed'; src: url('/atlasrush/fonts/barlow-condensed-bold-italic.ttf') format('truetype'); font-style: italic; font-weight: 800; font-display: swap;}
+/* AtlasRush visual fork, 2026. Game state, routes and protocols remain upstream-owned. */
+.atlas-background { background: var(--ar-sky); }
+.atlas-background > div { opacity: .1 !important; }
+.atlas-background::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(1px 1px at 12% 20%, var(--gd-content-primary) 50%, transparent 100%), radial-gradient(1px 1px at 72% 57%, var(--gd-content-secondary) 50%, transparent 100%), radial-gradient(2px 2px at 48% 14%, var(--gd-accent-star) 30%, transparent 100%), radial-gradient(1px 1px at 30% 80%, var(--gd-content-primary) 50%, transparent 100%); background-size: 230px 200px, 310px 250px, 540px 400px, 420px 330px; opacity: .45; }
+.atlas-shell-header { background: var(--ar-header); border-bottom: 1px solid var(--gd-border-default); backdrop-filter: blur(18px); }
+.atlas-wordmark { display: inline-flex; align-items: center; color: var(--gd-content-primary); font-family: var(--gd-font-family-body); font-size: 27px; font-weight: 800; line-height: 1; letter-spacing: -1.5px; white-space: nowrap; }
+.atlas-wordmark > span:last-child { color: rgb(var(--gd-action-primary)); }
+.atlas-brand-pin { color: rgb(var(--gd-accent-blue)); padding-right: 6px; font-size: 35px; }
+.app-shell-navigation [aria-label='Primary navigation'] { border-radius: 999px; background: var(--ar-nav); border-color: var(--gd-border-default); box-shadow: var(--gd-shadow-1); }
+.app-shell-navigation [aria-label='Primary navigation'] a { font-family: var(--gd-font-family-display); font-style: italic; font-size: 20px; letter-spacing: .2px; }
+.app-shell-navigation a[aria-current='page'] > span:first-child { background: var(--ar-selected); border-color: var(--gd-hud-border); border-radius: 999px; }
+.atlas-lobby { gap: 32px; }
+.atlas-hero { position: relative; isolation: isolate; min-height: 370px; border-radius: 28px; overflow: hidden; border: 1px solid var(--gd-hud-border); background: var(--ar-hero-shade), url('/atlasrush/alps.jpg') center 56% / cover; box-shadow: var(--gd-shadow-2); }
+.atlas-hero-copy { position: relative; z-index: 1; padding: 40px 45px; max-width: 680px; }
+.atlas-hero-copy > p:first-child { color: rgb(var(--gd-action-primary)); letter-spacing: .22em; font-size: 10px; }
+.atlas-hero h1 { font-family: var(--gd-font-family-display); font-size: clamp(64px, 6.2vw, 88px); font-weight: 800; font-style: italic; line-height: .91; letter-spacing: -.02em; margin: 18px 0; }
+.atlas-hero h1 > span { color: rgb(var(--gd-action-primary)); }
+.atlas-hero h1 + p { font-size: 14px; line-height: 1.7; max-width: 340px; color: var(--gd-content-secondary); }
+.atlas-hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 22px; margin-top: 25px; }
+.atlas-hero-actions button { min-height: 50px; padding: 0 27px; border-radius: 999px; box-shadow: 0 4px 0 var(--ar-green-shadow); font-family: var(--gd-font-family-display); font-style: italic; font-size: 21px; }
+.atlas-how-link { display: inline-flex; align-items: center; gap: 8px; color: var(--gd-content-primary); font-size: 12px; font-weight: 600; }
+.atlas-how-link:hover { text-decoration: underline; }
+.atlas-hero-caption { position: absolute; bottom: 20px; right: 24px; display: flex; align-items: center; gap: 7px; color: var(--gd-content-secondary); font-size: 9px; letter-spacing: .12em; }
+.atlas-section-title { font-family: var(--gd-font-family-display); font-style: italic; font-size: 30px; letter-spacing: .015em; }
+.atlas-mode-card { min-height: 232px; border: 1px solid var(--gd-hud-border); background: var(--ar-card); box-shadow: var(--gd-shadow-1); transition: transform .2s, border-color .2s; }
+.atlas-mode-card:hover { transform: translateY(-3px); border-color: rgb(var(--gd-accent-blue)); }
+.atlas-mode-card h1 { font-family: var(--gd-font-family-display); font-style: italic; font-size: 45px; line-height: 1; }
+.atlas-mode-card > div:last-child { margin-top: auto; }
+.atlas-mode-card [class*='text-body'][class*='font-medium'] { color: var(--gd-content-secondary); font-size: 12px; }
+.atlas-mode-card .atlas-button { min-height: 46px; border-radius: 999px; font-family: var(--gd-font-family-display); font-size: 22px; font-style: italic; letter-spacing: .03em; }
+.atlas-mode-icon { position: absolute; width: 95px; height: 95px; right: 16px; top: 28px; color: rgb(var(--gd-accent-blue)); opacity: .14; transform: rotate(-15deg); }
+.atlas-button { border-radius: 999px; }
+.atlas-emote { width: 30px; height: 30px; display: inline-block; vertical-align: middle; object-fit: contain; }
+.atlas-legal > div { flex-wrap: wrap; justify-content: center; gap: 14px; }
+.atlas-legal a:hover { color: var(--gd-content-primary); text-decoration: underline; }
+.font-hud, .font-display { font-style: italic; }
+[data-testid='timer-pill'] { background: var(--gd-hud-surface); font-family: var(--gd-font-family-display); font-style: italic; font-weight: 800; box-shadow: var(--gd-shadow-2); }
+@media (max-width: 767px) {
+ .atlas-shell-header { padding: 20px 16px; }
+ .atlas-wordmark { font-size: 23px; }
+ .atlas-brand-pin { font-size: 27px; }
+ .atlas-hero { min-height: 390px; }
+ .atlas-hero-copy { padding: 30px 25px 65px; }
+ .atlas-hero h1 { font-size: clamp(60px, 15vw, 82px); }
+ .atlas-hero-caption { left: 25px; right: auto; font-size: 8px; }
+ .atlas-hero-actions { gap: 18px; }
+ .atlas-mode-card { min-height: 210px; }
+ .atlas-section-title { font-size: 27px; }
+ .app-shell-navigation [aria-label='Primary navigation'] { border-radius: 24px; background: var(--ar-header); }
+ .app-shell-navigation [aria-label='Primary navigation'] a { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) { .atlas-mode-card { transition: none; } .atlas-mode-card:hover { transform: none; } }
