@@ -1,0 +1,122 @@
+import type { ReactElement, ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
+import type { LobbyContentRoute } from "../../lobby/components/LobbyScreen";
+import {
+  normalizeEntityRouteId,
+  toPublicEntityId,
+} from "../../../lib/entity-id";
+import { useHomeModel } from "../model/useHomeModel";
+import HomePageView from "./HomePageView";
+import { scheduleLobbyPreloading } from "./lobby-preloading";
+
+function resolveLobbyRoute(pathname: string): LobbyContentRoute {
+  if (pathname === "/friends") return "friends";
+  if (pathname === "/top") return "top";
+  if (pathname === "/maps/upload") return "map-upload";
+  if (pathname === "/maps/[id]") return "map-details";
+  if (pathname === "/maps") return "maps";
+  if (pathname === "/party/[code]") return "party";
+  return "play";
+}
+
+export function LobbyApplicationLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [routeLoading, setRouteLoading] = useState(false);
+  const lobbyRoute = resolveLobbyRoute(router.pathname);
+  const rawPartyCode = typeof router.query.code === "string" ? router.query.code : "";
+  const partyInviteCode = rawPartyCode.trim().toUpperCase();
+  const routedPartyCode = lobbyRoute === "party" ? partyInviteCode : "";
+  const mapId =
+    lobbyRoute === "map-details" && typeof router.query.id === "string"
+      ? normalizeEntityRouteId(router.query.id)
+      : "";
+  const prevMatchIdRef = useRef("");
+
+  const handlePartyEntered = useCallback(
+    (inviteCode: string) => {
+      const nextPath = `/party/${encodeURIComponent(inviteCode)}`;
+      if (router.asPath.split("?")[0] !== nextPath) {
+        void router.replace(nextPath, undefined, { shallow: true });
+      }
+    },
+    [router],
+  );
+  const handlePartyLeft = useCallback(() => {
+    void router.push("/");
+  }, [router]);
+
+  const model = useHomeModel({
+    routeContext: "home",
+    partyInviteCode: routedPartyCode,
+    onPartyEntered: handlePartyEntered,
+    onPartyLeft: handlePartyLeft,
+  });
+
+  useEffect(
+    () => scheduleLobbyPreloading(router, lobbyRoute),
+    [lobbyRoute, router],
+  );
+
+  useEffect(() => {
+    let loadingTimer: number | undefined;
+
+    const handleStart = () => {
+      if (loadingTimer !== undefined) window.clearTimeout(loadingTimer);
+      loadingTimer = window.setTimeout(() => setRouteLoading(true), 120);
+    };
+    const handleDone = () => {
+      if (loadingTimer !== undefined) window.clearTimeout(loadingTimer);
+      loadingTimer = undefined;
+      setRouteLoading(false);
+    };
+
+    router.events.on("routeChangeStart", handleStart);
+    router.events.on("routeChangeComplete", handleDone);
+    router.events.on("routeChangeError", handleDone);
+
+    return () => {
+      if (loadingTimer !== undefined) window.clearTimeout(loadingTimer);
+      router.events.off("routeChangeStart", handleStart);
+      router.events.off("routeChangeComplete", handleDone);
+      router.events.off("routeChangeError", handleDone);
+    };
+  }, [router.events]);
+
+  useEffect(() => {
+    if (lobbyRoute !== "party" || !rawPartyCode) return;
+    if (rawPartyCode !== partyInviteCode) {
+      void router.replace(
+        `/party/${encodeURIComponent(partyInviteCode)}`,
+        undefined,
+        { shallow: true },
+      );
+    }
+  }, [lobbyRoute, partyInviteCode, rawPartyCode, router]);
+
+  useEffect(() => {
+    const nextMatchId = model.view.meta.activeMatchId;
+    const prevMatchId = prevMatchIdRef.current;
+    prevMatchIdRef.current = nextMatchId;
+    if (!nextMatchId || nextMatchId === prevMatchId || model.view.meta.sourcePartyInviteCode) return;
+    void router.push(
+      `/match/${encodeURIComponent(toPublicEntityId(nextMatchId))}`,
+    );
+  }, [model.view.meta.activeMatchId, model.view.meta.sourcePartyInviteCode, router]);
+
+  return (
+    <>
+      {children}
+      <HomePageView
+        model={model}
+        lobbyRoute={lobbyRoute}
+        mapId={mapId}
+        routeLoading={routeLoading}
+      />
+    </>
+  );
+}
+
+export function getLobbyLayout(page: ReactElement) {
+  return <LobbyApplicationLayout>{page}</LobbyApplicationLayout>;
+}

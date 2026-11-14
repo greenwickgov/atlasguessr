@@ -1,0 +1,195 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { setSfxMuted } from "../../../lib/audio/sfx-preferences";
+import { useAuthState } from "../../auth/components/AuthProvider";
+import { bindingKey, DEFAULT_HOTKEY_PREFERENCES } from "../model/defaults";
+import { eventMatchesBinding, isEditableTarget } from "../lib/keyboard-event";
+import { patchPreferences } from "../lib/preferences-client";
+import { loadLocalPreferences, normalizePreferences, saveLocalPreferences } from "../lib/storage";
+import type { HotkeyAction, HotkeyPreferences, HotkeyRegistration, KeyBinding } from "../model/types";
+import HotkeySettings from "./HotkeySettings";
+
+type HotkeyContextValue = {
+  preferences: HotkeyPreferences;
+  register: (registration: HotkeyRegistration) => () => void;
+  setBinding: (action: HotkeyAction, binding: KeyBinding | null) => void;
+  resetBinding: (action: HotkeyAction) => void;
+  resetAll: () => void;
+  setAudioMuted: (muted: boolean) => void;
+  setSfxMuted: (muted: boolean) => void;
+  setCompassStyle: (style: HotkeyPreferences["compassStyle"]) => void;
+  settingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
+  saveStatus: "local" | "saving" | "saved" | "error";
+};
+
+const HotkeyContext = createContext<HotkeyContextValue | null>(null);
+const scopePriority = { global: 0, lobby: 1, gameplay: 2, modal: 3, capture: 4 };
+
+export function HotkeyProvider({ children }: { children: ReactNode }) {
+  const [preferences, setPreferencesState] = useState<HotkeyPreferences>(() => loadLocalPreferences());
+  const preferencesRef = useRef(preferences);
+  const registrations = useRef(new Map<number, HotkeyRegistration>());
+  const registrationId = useRef(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<HotkeyContextValue["saveStatus"]>("local");
+  const syncRef = useRef<{ token: string; revision: number } | null>(null);
+  const hydratedRef = useRef(false);
+  const skipNextSaveRef = useRef(false);
+
+  const setPreferences = useCallback((next: HotkeyPreferences) => {
+    preferencesRef.current = next;
+    setPreferencesState(next);
+    saveLocalPreferences(next);
+  }, []);
+  const auth = useAuthState();
+
+  useEffect(() => {
+    setSfxMuted(preferences.sfxMuted);
+  }, [preferences.sfxMuted]);
+
+  useEffect(() => {
+    if (auth.status === "bootstrapping") return;
+    const session = auth.session;
+    const remote = auth.bootstrap?.preferences;
+    if (!session?.accessToken || !remote) {
+      hydratedRef.current = true;
+      return;
+    }
+    syncRef.current = { token: session.accessToken, revision: remote.revision };
+    if (remote.revision > 0) {
+      skipNextSaveRef.current = true;
+      setPreferences(normalizePreferences(remote.value));
+    }
+    hydratedRef.current = true;
+    setSaveStatus("saved");
+  }, [auth.bootstrap, auth.session, auth.status, setPreferences]);
+
+  useEffect(() => {
+    if (!hydratedRef.current || !syncRef.current) return;
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
+    setSaveStatus("saving");
+    const timer = window.setTimeout(async () => {
+      const sync = syncRef.current;
+      if (!sync) return;
+      try {
+        const saved = await patchPreferences(sync.token, preferencesRef.current, sync.revision);
+        sync.revision = saved.revision;
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("error");
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [preferences]);
+
+  const register = useCallback((registration: HotkeyRegistration) => {
+    const id = ++registrationId.current;
+    registrations.current.set(id, registration);
+    return () => {
+      registrations.current.delete(id);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing) return;
+      const matches = [...registrations.current.values()]
+        .filter((registration) => registration.enabled !== false)
+        .filter((registration) => !event.repeat || registration.allowRepeat)
+        .filter((registration) => registration.allowWhileTyping || !isEditableTarget(event.target))
+        .filter((registration) => (preferencesRef.current.bindings[registration.action] || []).some((binding) => eventMatchesBinding(event, binding)))
+        .sort((a, b) => scopePriority[b.scope || "global"] - scopePriority[a.scope || "global"]);
+      const selected = matches[0];
+      if (!selected) return;
+      if (document.querySelector('[aria-modal="true"]') && (selected.scope || "global") !== "modal" && (selected.scope || "global") !== "capture") return;
+      event.preventDefault();
+      selected.run(event);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => register({
+    action: "display.fullscreen",
+    scope: "global",
+    run: () => {
+      if (document.fullscreenElement) void document.exitFullscreen();
+      else void document.documentElement.requestFullscreen().catch(() => undefined);
+    },
+  }), [register]);
+
+  useEffect(() => register({
+    action: "help.shortcuts",
+    scope: "global",
+    run: () => setSettingsOpen(true),
+  }), [register]);
+
+  useEffect(() => register({
+    action: "audio.toggleMute",
+    scope: "global",
+    run: () => setPreferences({
+      ...preferencesRef.current,
+      audioMuted: !preferencesRef.current.audioMuted,
+    }),
+  }), [register, setPreferences]);
+
+  const value = useMemo<HotkeyContextValue>(() => ({
+    preferences,
+    register,
+    setBinding: (action, binding) => {
+      if (binding) {
+        const duplicate = Object.entries(preferencesRef.current.bindings).find(([other, bindings]) =>
+          other !== action && bindings.some((item) => bindingKey(item) === bindingKey(binding)));
+        if (duplicate) {
+          setPreferences({
+            ...preferencesRef.current,
+            bindings: {
+              ...preferencesRef.current.bindings,
+              [duplicate[0]]: [],
+              [action]: [binding],
+            },
+          });
+          return;
+        }
+      }
+      setPreferences({
+        ...preferencesRef.current,
+        bindings: { ...preferencesRef.current.bindings, [action]: binding ? [binding] : [] },
+      });
+    },
+    resetBinding: (action) => setPreferences({
+      ...preferencesRef.current,
+      bindings: {
+        ...preferencesRef.current.bindings,
+        [action]: DEFAULT_HOTKEY_PREFERENCES.bindings[action],
+      },
+    }),
+    resetAll: () => setPreferences(normalizePreferences(DEFAULT_HOTKEY_PREFERENCES)),
+    setAudioMuted: (audioMuted) => setPreferences({ ...preferencesRef.current, audioMuted }),
+    setSfxMuted: (sfxMuted) => setPreferences({ ...preferencesRef.current, sfxMuted }),
+    setCompassStyle: (compassStyle) => setPreferences({ ...preferencesRef.current, compassStyle }),
+    settingsOpen,
+    setSettingsOpen,
+    saveStatus,
+  }), [preferences, register, saveStatus, setPreferences, settingsOpen]);
+
+  return (
+    <HotkeyContext.Provider value={value}>
+      {children}
+      {settingsOpen ? <HotkeySettings onClose={() => setSettingsOpen(false)} /> : null}
+    </HotkeyContext.Provider>
+  );
+}
+
+export function useHotkeys() {
+  const context = useContext(HotkeyContext);
+  if (!context) throw new Error("useHotkeys must be used inside HotkeyProvider");
+  return context;
+}
+
+export function useOptionalHotkeys() {
+  return useContext(HotkeyContext);
+}

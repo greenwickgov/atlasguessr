@@ -1,0 +1,8 @@
+import Head from 'next/head';
+import { AppPanel } from '../components/ui/compositions';
+import { Heading, BodyText } from '../components/ui/typography';
+
+export default function SourcePage(){
+ const sourceURL=process.env.NEXT_PUBLIC_SOURCE_URL;
+ return <><Head><title>AtlasRush | Source and credits</title></Head><main className="mx-auto w-full max-w-3xl p-6"><AppPanel className="p-6 sm:p-8"><Heading as="h1" variant="display-lg">Source &amp; credits</Heading><BodyText className="mt-6">AtlasRush is a modified version of GeoDuels by sourcelocation and its contributors, distributed under the GNU Affero General Public License v3. The game engine, accounts, matchmaking and network protocols come from GeoDuels. The AtlasRush changes cover the interface, theme and reaction artwork.</BodyText><p className="mt-6"><a className="underline" href="https://github.com/sourcelocation/geoduels">Original GeoDuels source</a></p>{sourceURL?<p className="mt-4"><a className="underline" href={sourceURL}>Download this modified application's corresponding source</a></p>:<BodyText className="mt-4">Host: publish the complete modified source and set NEXT_PUBLIC_SOURCE_URL before offering this application over a network. The complete source is included in the distribution ZIP.</BodyText>}<BodyText className="mt-6">Upstream revision: a3dde5b451bb0334bf18db6bcc4e1ff85086a05f. See LICENSE and UPSTREAM.md in the source package.</BodyText><BodyText className="mt-6">Sensa Emoji by sensadesign is included under its MIT licence. Barlow Condensed by Jeremy Tribby is included under the SIL Open Font License. Original GeoDuels artwork and its notices remain in the source tree.</BodyText></AppPanel></main></>;
+}

@@ -1,0 +1,368 @@
+package singleplayer
+
+import (
+	"errors"
+	"sync"
+	"time"
+
+	"geoduels/pkg/gameplay"
+	"geoduels/pkg/matchkind"
+)
+
+const maxRounds = 5
+
+type Guess struct {
+	Lat       float64
+	Lng       float64
+	Finalized bool
+	Ts        time.Time
+}
+
+type Session struct {
+	ID              string
+	Config          gameplay.MatchConfig
+	Player          *gameplay.PlayerState
+	CurrentLocation gameplay.LocationPoint
+	CurrentIndex    int
+	RoundID         string
+	RoundStartedAt  time.Time
+	Guess           *Guess
+	LastRoundResult *gameplay.RoundResult
+	RoundResults    []*gameplay.RoundResult
+	AwaitingAdvance bool
+	State           gameplay.MatchState
+	EventSeq        int64
+	CreatedAt       time.Time
+	LastActivity    time.Time
+	now             func() time.Time
+}
+
+type RoundProvider func(matchID string, roundIndex int) (gameplay.LocationPoint, error)
+
+type Engine struct {
+	mu            sync.RWMutex
+	sessions      map[string]*Session
+	roundProvider RoundProvider
+	now           func() time.Time
+}
+
+func New(roundProvider RoundProvider) *Engine {
+	return NewWithClock(roundProvider, time.Now)
+}
+
+// NewWithClock gives replay and parity tests a deterministic authoritative
+// time source without forcing solo and competitive modes into one state type.
+func NewWithClock(roundProvider RoundProvider, now func() time.Time) *Engine {
+	if now == nil {
+		now = time.Now
+	}
+	return &Engine{
+		sessions:      map[string]*Session{},
+		roundProvider: roundProvider,
+		now:           now,
+	}
+}
+
+func (e *Engine) CreateMatch(matchID string, playerIDs []string, profiles map[string]gameplay.PlayerProfile) (*Session, error) {
+	return e.CreateMatchWithConfig(matchID, playerIDs, profiles, gameplay.MatchConfig{})
+}
+
+func (e *Engine) CreateMatchWithConfig(matchID string, playerIDs []string, profiles map[string]gameplay.PlayerProfile, config gameplay.MatchConfig) (*Session, error) {
+	if len(playerIDs) != 1 {
+		return nil, errors.New("singleplayer requires exactly one player")
+	}
+	if e.roundProvider == nil {
+		return nil, errors.New("round provider required")
+	}
+	firstRound, err := e.roundProvider(matchID, 0)
+	if err != nil {
+		return nil, err
+	}
+	playerID := playerIDs[0]
+	profile := profiles[playerID]
+	name := profile.DisplayName
+	if name == "" {
+		name = playerID
+	}
+	now := e.now()
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if _, ok := e.sessions[matchID]; ok {
+		return nil, errors.New("match already exists")
+	}
+	config = gameplay.NormalizeMatchConfig(config)
+	session := &Session{
+		ID:              matchID,
+		Config:          config,
+		Player:          &gameplay.PlayerState{UserID: playerID, DisplayName: name, MMR: profile.MMR, RatingRD: profile.RatingRD, RankedGamesPlayed: profile.RankedGamesPlayed, AvatarURL: profile.AvatarURL, IsGuest: profile.IsGuest, IsAdmin: profile.IsAdmin, SelectedBadge: profile.SelectedBadge},
+		CurrentLocation: firstRound,
+		CurrentIndex:    0,
+		RoundID:         roundID(matchID, 1),
+		RoundStartedAt:  now,
+		State:           gameplay.MatchLive,
+		EventSeq:        1,
+		CreatedAt:       now,
+		LastActivity:    now,
+		now:             e.now,
+	}
+	e.sessions[matchID] = session
+	return session, nil
+}
+
+func (e *Engine) GetSnapshot(matchID string) (*gameplay.MatchSnapshot, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	session, ok := e.sessions[matchID]
+	if !ok {
+		return nil, errors.New("match not found")
+	}
+	return session.snapshot(), nil
+}
+
+func (e *Engine) SubmitGuess(g gameplay.Guess) (*gameplay.MatchSnapshot, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	session, ok := e.sessions[g.MatchID]
+	if !ok {
+		return nil, errors.New("match not found")
+	}
+	if session.State != gameplay.MatchLive {
+		return session.snapshot(), nil
+	}
+	if session.Player.UserID != g.UserID {
+		return nil, errors.New("player not in match")
+	}
+	if session.RoundID != g.RoundID {
+		return nil, errors.New("round mismatch")
+	}
+	if session.AwaitingAdvance {
+		return session.snapshot(), nil
+	}
+	now := e.now()
+	session.Guess = &Guess{Lat: g.Lat, Lng: g.Lng, Finalized: g.Finalize, Ts: now}
+	session.Player.LastGuessLat = g.Lat
+	session.Player.LastGuessLng = g.Lng
+	session.Player.HasGuess = true
+	session.Player.Finalized = g.Finalize
+	session.Player.Disconnected = false
+	session.Player.DisconnectDue = 0
+	session.LastActivity = now
+	session.EventSeq++
+	if g.Finalize {
+		e.resolveRound(session)
+	}
+	return session.snapshot(), nil
+}
+
+func (e *Engine) AdvanceRound(matchID, userID string) (*gameplay.MatchSnapshot, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	session, ok := e.sessions[matchID]
+	if !ok {
+		return nil, errors.New("match not found")
+	}
+	if session.Player.UserID != userID {
+		return nil, errors.New("player not in match")
+	}
+	if session.State != gameplay.MatchLive {
+		return session.snapshot(), nil
+	}
+	if !session.AwaitingAdvance {
+		return session.snapshot(), nil
+	}
+	if session.CurrentIndex+1 >= maxRounds {
+		session.State = gameplay.MatchEnded
+		session.AwaitingAdvance = false
+		session.LastActivity = e.now()
+		session.EventSeq++
+		return session.snapshot(), nil
+	}
+	nextIndex := session.CurrentIndex + 1
+	nextLoc, err := e.roundProvider(matchID, nextIndex)
+	if err != nil {
+		return nil, err
+	}
+	session.CurrentIndex = nextIndex
+	session.CurrentLocation = nextLoc
+	session.RoundID = roundID(matchID, nextIndex+1)
+	session.RoundStartedAt = e.now()
+	session.Guess = nil
+	session.LastRoundResult = nil
+	session.AwaitingAdvance = false
+	session.Player.Finalized = false
+	session.Player.LastGuessLat = 0
+	session.Player.LastGuessLng = 0
+	session.Player.HasGuess = false
+	session.LastActivity = e.now()
+	session.EventSeq++
+	return session.snapshot(), nil
+}
+
+func (e *Engine) Forfeit(matchID, userID string) (*gameplay.MatchSnapshot, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	session, ok := e.sessions[matchID]
+	if !ok {
+		return nil, errors.New("match not found")
+	}
+	if session.Player.UserID != userID {
+		return nil, errors.New("player not in match")
+	}
+	session.State = gameplay.MatchEnded
+	session.AwaitingAdvance = false
+	session.Player.Finalized = false
+	session.LastActivity = e.now()
+	session.EventSeq++
+	return session.snapshot(), nil
+}
+
+func (e *Engine) Tick() {}
+
+// Remove forgets a session, once it is recorded or no longer this engine's.
+func (e *Engine) Remove(matchID string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	delete(e.sessions, matchID)
+}
+
+func (e *Engine) MarkDisconnected(matchID, userID string) (*gameplay.MatchSnapshot, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	session, ok := e.sessions[matchID]
+	if !ok {
+		return nil, errors.New("match not found")
+	}
+	if session.Player.UserID != userID {
+		return nil, errors.New("player not in match")
+	}
+	session.Player.Disconnected = true
+	session.LastActivity = e.now()
+	session.EventSeq++
+	return session.snapshot(), nil
+}
+
+func (e *Engine) MarkResumed(matchID, userID string) (*gameplay.MatchSnapshot, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	session, ok := e.sessions[matchID]
+	if !ok {
+		return nil, errors.New("match not found")
+	}
+	if session.Player.UserID != userID {
+		return nil, errors.New("player not in match")
+	}
+	session.Player.Disconnected = false
+	session.LastActivity = e.now()
+	session.EventSeq++
+	return session.snapshot(), nil
+}
+
+func (e *Engine) resolveRound(session *Session) {
+	if session.Guess == nil {
+		return
+	}
+	guess := *session.Guess
+	dist := gameplay.ClampDistanceKm(gameplay.HaversineKm(session.CurrentLocation.Lat, session.CurrentLocation.Lng, guess.Lat, guess.Lng))
+	score := gameplay.RoundScore(dist)
+	session.Player.TotalScore += score
+	session.Player.Finalized = false
+	session.LastRoundResult = &gameplay.RoundResult{
+		RoundID:        session.RoundID,
+		RoundNumber:    session.CurrentIndex + 1,
+		ActualLocation: session.CurrentLocation,
+		Players: map[string]gameplay.RoundPlayerResult{
+			session.Player.UserID: {
+				UserID:      session.Player.UserID,
+				Lat:         guess.Lat,
+				Lng:         guess.Lng,
+				DistanceKm:  dist,
+				Score:       score,
+				GuessUnixMS: guessUnixMS(guess),
+				GuessMS:     guessMS(guess, session.RoundStartedAt),
+			},
+		},
+	}
+	session.RoundResults = append(session.RoundResults, session.LastRoundResult)
+	session.Guess = nil
+	session.AwaitingAdvance = true
+	session.LastActivity = e.now()
+	session.EventSeq++
+}
+
+func guessUnixMS(g Guess) int64 {
+	if g.Ts.IsZero() {
+		return 0
+	}
+	return g.Ts.UnixMilli()
+}
+
+func guessMS(g Guess, roundStartedAt time.Time) int64 {
+	if g.Ts.IsZero() || roundStartedAt.IsZero() {
+		return 0
+	}
+	ms := g.Ts.Sub(roundStartedAt).Milliseconds()
+	if ms < 0 {
+		return 0
+	}
+	return ms
+}
+
+func (s *Session) snapshot() *gameplay.MatchSnapshot {
+	players := map[string]gameplay.PlayerState{
+		s.Player.UserID: *s.Player,
+	}
+	now := s.now().UnixMilli()
+	phase := gameplay.PhaseLive
+	roundPhase := gameplay.RoundPhaseLive
+	currentRound := &gameplay.RoundState{
+		RoundID:       s.RoundID,
+		RoundNumber:   s.CurrentIndex + 1,
+		RoundDeadline: time.UnixMilli(0),
+		Location:      s.CurrentLocation,
+	}
+	if s.State == gameplay.MatchEnded {
+		phase = gameplay.PhaseEnded
+		roundPhase = gameplay.RoundPhaseEnded
+		currentRound = nil
+	} else if s.AwaitingAdvance {
+		phase = gameplay.PhaseRoundResult
+		roundPhase = gameplay.RoundPhaseResult
+		currentRound = nil
+	}
+	return &gameplay.MatchSnapshot{
+		MatchID:         s.ID,
+		Mode:            matchkind.ModeSingleplayer,
+		Kind:            matchkind.Solo,
+		State:           s.State,
+		Phase:           phase,
+		RoundPhase:      roundPhase,
+		PhaseStartedAt:  now,
+		PhaseEndsAt:     now,
+		CurrentRound:    currentRound,
+		LastRoundResult: s.LastRoundResult,
+		RoundResults:    append([]*gameplay.RoundResult(nil), s.RoundResults...),
+		RoundMSLeft:     0,
+		Players:         players,
+		Config:          gameplay.NormalizeMatchConfig(s.Config),
+		EventSequence:   s.EventSeq,
+		ServerUnixMS:    now,
+		GraceWindowSec:  0,
+	}
+}
+
+func roundID(matchID string, round int) string {
+	return matchID + ":r" + strconv(round)
+}
+
+func strconv(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	out := ""
+	for n > 0 {
+		d := n % 10
+		out = string(rune('0'+d)) + out
+		n = n / 10
+	}
+	return out
+}

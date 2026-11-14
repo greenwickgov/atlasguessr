@@ -1,0 +1,9 @@
+# Local build/test artifacts are not needed for source image builds.
+dist/
+bin/
+tmp/
+*.log
+.DS_Store
+
+# Generated sqlc code is regenerated inside the image build.
+pkg/persistence/sqlc/
