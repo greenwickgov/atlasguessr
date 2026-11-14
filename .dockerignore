@@ -1,0 +1,16 @@
+.git
+**/node_modules
+**/.next
+**/.next-dev
+**/coverage
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+**/*.log
+**/.env*
+backend/pkg/persistence/sqlc
+backend/bin
+backend/tmp
+web/assets
+extension
+tests

@@ -1,5 +1,13 @@
 # AtlasRush — GeoDuels UI fork
 
+## Cloud hosting
+
+`render.yaml` and the root `Dockerfile` package the existing Go game services and
+Next.js frontend for Render, with a separate managed PostgreSQL database. See
+[Render hosting](docs/render-hosting.md) for setup and verification. This is a
+single-instance trial configuration: the Free web service sleeps when idle, and
+the Free database expires after 30 days. No game code has been migrated to Convex.
+
 The actual GeoDuels source with an AtlasRush visual redesign inspired by the supplied purple geography-game references. This replaces the earlier independent AtlasRush prototype.
 
 **Upstream:** https://github.com/sourcelocation/geoduels at `a3dde5b451bb0334bf18db6bcc4e1ff85086a05f`. **Licence:** AGPL-3.0-only. See [UPSTREAM.md](UPSTREAM.md), [LICENSE](LICENSE) and [the preserved original README](README.upstream.md).

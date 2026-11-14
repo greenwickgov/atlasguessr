@@ -1,0 +1,38 @@
+# Trial hosting: Free web services sleep when idle; Free Postgres expires in 30 days.
+# Upgrade/migrate the database before expiry if you intend to retain player data.
+services:
+  - type: web
+    name: atlasrush
+    runtime: docker
+    region: singapore
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    maxShutdownDelaySeconds: 30
+    autoDeployTrigger: commit
+    envVars:
+      - key: POSTGRES_URL
+        fromDatabase:
+          name: atlasrush-db
+          property: connectionString
+      - key: APP_AUTH_SECRET
+        generateValue: true
+      - key: COORDINATOR_INTERNAL_SECRET
+        generateValue: true
+      - key: POSTGRES_MAX_CONNS
+        value: "8"
+      - key: TURNSTILE_GUEST_REQUIRED
+        value: "false"
+      - key: GOOGLE_EMBED_KEY
+        value: ""
+
+databases:
+  - name: atlasrush-db
+    region: singapore
+    plan: free
+    postgresMajorVersion: "18"
+    databaseName: atlasrush
+    user: atlasrush
+    ipAllowList: []
