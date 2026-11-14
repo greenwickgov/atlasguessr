@@ -82,7 +82,7 @@ export function deriveHomeModel({
   leaderboardLoading = false,
   maintenance = null,
   changelogEyebrow = "Latest News",
-  changelogTitle = "GeoDuels v1.1",
+  changelogTitle = "AtlasRush v1.1",
   changelogMarkdown = "",
   changelogSlug = "",
   changelogUpdatedAt = "",

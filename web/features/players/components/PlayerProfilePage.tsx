@@ -55,7 +55,7 @@ export function PlayerProfilePage({
     return (
       <>
         <SocialPreviewHead
-          title="Player not found | GeoDuels"
+          title="Player not found | AtlasRush"
           description="This profile does not exist or is no longer available."
           canonicalPath={playerId ? `/players/${encodeURIComponent(playerId)}` : "/"}
           robots="noindex"

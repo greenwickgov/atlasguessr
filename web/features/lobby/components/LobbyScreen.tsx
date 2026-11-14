@@ -298,6 +298,8 @@ export default function LobbyScreen({
     <PlayPanel
       isSingleplayerLoading={isSingleplayerLoading}
       queueError={queueError}
+      onPartyPlay={() => setOpenModal("invite")}
+      playerName={displayName}
       onDuelsPlay={onDuelsPlay}
       onSingleplayerPlay={() => openSingleplayerModal()}
       duelDisabled={duelDisabled}

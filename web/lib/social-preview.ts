@@ -11,7 +11,7 @@ export type SocialPreview = {
 };
 
 export const SOCIAL_ICON_IMAGE = {
-  imagePath: "/icon.v1.png",
+  imagePath: "/atlasrush/icon.png",
   imageWidth: 256,
   imageHeight: 256,
   imageType: "image/png",

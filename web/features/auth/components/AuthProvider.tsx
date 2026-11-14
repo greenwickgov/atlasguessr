@@ -318,6 +318,7 @@ export function AuthSignInModal() {
   return (
     <AppModalShell title="Sign In" onClose={actions.closeSignIn} placement="center">
       <div className="space-y-3">
+        {!actions.googleEnabled && !actions.discordEnabled ? <p className="text-body-sm text-content-secondary">Guest play is available now for Classic and private parties. Registered sign-in and ranked access are not available on this installation yet.</p> : null}
         {actions.googleEnabled ? (
           <ProviderButton provider="google" loading={actions.authLoading} onClick={() => void actions.startProvider("google")} />
         ) : null}
@@ -326,7 +327,7 @@ export function AuthSignInModal() {
         ) : null}
         {!actions.googleEnabled && !actions.discordEnabled ? (
           <Button type="button" variant="secondary" loading={actions.authLoading} onClick={() => void actions.devLogin()}>
-            Dev Login
+            Continue as guest
           </Button>
         ) : null}
         {actions.authError ? <p className="text-center text-body-sm font-semibold text-status-danger">{actions.authError}</p> : null}

@@ -8,8 +8,8 @@ export const getStaticProps = cachedPage();
 const FriendsPage: NextPageWithLayout = function FriendsPage() {
   return (
     <LobbyRoutePage
-      title="GeoDuels | Friends"
-      description="Create or join a private GeoDuels party and play with friends."
+      title="AtlasRush | Friends"
+      description="Create or join a private AtlasRush party and play with friends."
       canonicalPath="/friends"
     />
   );

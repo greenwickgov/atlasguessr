@@ -8,9 +8,9 @@ import {
 import { toPublicEntityId } from "../../../lib/entity-id";
 
 const GENERIC_MAP: SocialPreview = {
-  title: "GeoDuels | Map Details",
+  title: "AtlasRush | Map Details",
   description:
-    "View GeoDuels map details, country distribution, comments, and play actions.",
+    "View AtlasRush map details, country distribution, comments, and play actions.",
   canonicalPath: "/maps",
   robots: "index,follow",
   ...SOCIAL_ICON_IMAGE,
@@ -47,7 +47,7 @@ export function buildMapSocialPreview(
   if (countries) parts.push(countries);
 
   return {
-    title: `${map.displayName} | GeoDuels`,
+    title: `${map.displayName} | AtlasRush`,
     description: parts.join(" · "),
     canonicalPath,
     robots: "index,follow",

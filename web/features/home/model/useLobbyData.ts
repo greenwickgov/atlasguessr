@@ -72,7 +72,7 @@ export function useLobbyData({
     changelogTitle:
       typeof changelogQuery.data?.title === "string"
         ? changelogQuery.data.title
-        : "GeoDuels v1.1",
+        : "AtlasRush v1.1",
     changelogMarkdown:
       typeof changelogQuery.data?.markdown === "string"
         ? changelogQuery.data.markdown

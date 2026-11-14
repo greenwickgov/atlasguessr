@@ -13,7 +13,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { label: "Play", route: "play", href: "/", icon: Play },
   { label: "Maps", route: "maps", href: "/maps", icon: Map },
   { label: "Friends", route: "friends", href: "/friends", icon: Users },
-  { label: "Top", route: "top", href: "/top", icon: Trophy },
+  { label: "Rankings", route: "top", href: "/top", icon: Trophy },
 ];
 
 /** Which section a page belongs to, if any. */

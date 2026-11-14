@@ -69,7 +69,7 @@ export function MaintenanceOverlay({
         <p className="text-label font-strong text-status-warning">Maintenance Break</p>
         <h2 className="mt-3 text-display-md font-strong tracking-heading text-content-primary">We&apos;ll Be Back Shortly</h2>
         <p className="mt-3 max-w-[42ch] text-body leading-prose text-content-primary">
-          {message || "GeoDuels is temporarily offline while we finish a scheduled upgrade."}
+          {message || "AtlasRush is temporarily offline while we finish a scheduled upgrade."}
         </p>
         <div className="mt-6 rounded-xl border border-border-default bg-surface-grouped px-5 py-4">
           <p className="text-label font-strong text-content-secondary">

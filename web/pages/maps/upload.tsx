@@ -8,8 +8,8 @@ export const getStaticProps = cachedPage();
 const MapUploadRoute: NextPageWithLayout = function MapUploadRoute() {
   return (
     <LobbyRoutePage
-      title="GeoDuels | Upload Map"
-      description="Upload a custom GeoDuels map."
+      title="AtlasRush | Upload Map"
+      description="Upload a custom AtlasRush map."
       canonicalPath="/maps/upload"
     />
   );

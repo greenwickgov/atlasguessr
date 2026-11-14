@@ -32,12 +32,12 @@ export const getStaticProps = cachedPage<ChangelogPostPageProps>(async (context)
 export default function ChangelogPostPage({ post }: ChangelogPostPageProps) {
   const siteURL = useSiteURL();
   const canonicalURL = `${siteURL}/changelog/${post.slug}`;
-  const description = `Read the ${post.title} update notes for GeoDuels.`;
+  const description = `Read the ${post.title} update notes for AtlasRush.`;
 
   return (
     <>
       <Head>
-        <title>{post.title} | GeoDuels Changelog</title>
+        <title>{post.title} | AtlasRush Changelog</title>
         <meta name="description" content={description} />
         <meta name="robots" content="index,follow" />
         <link rel="canonical" href={canonicalURL} />

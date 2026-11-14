@@ -61,35 +61,8 @@ const modes: Array<{
   },
 ];
 
-function ExtensionInstallCallout({
-  status,
-}: {
-  status: ExtensionAvailabilityStatus;
-}) {
-  const outdated = status.state === "outdated";
-  return (
-    <div className="rounded-xl border border-border-default bg-surface-grouped p-3 text-center">
-      <p className="text-body-sm font-semibold text-content-secondary">
-        {outdated
-          ? "Update the official GeoDuels browser extension to unlock these options."
-          : "Unlock more options by installing the official GeoDuels browser extension. This is required so GeoDuels can modify Google scripts and stay free."}
-      </p>
-      <div className="mt-2 flex flex-wrap justify-center gap-2">
-        <a
-          href="https://chromewebstore.google.com/detail/geoduels-enhancer/ecdjkhpicnccgbkdimbbjbnppnkeelmd"
-          className="rounded-md bg-surface-fill px-3 py-1.5 text-label font-strong text-content-primary transition-colors hover:bg-surface-raised"
-        >
-          {outdated ? "Chrome update" : "Chrome setup"}
-        </a>
-        <a
-          href="https://addons.mozilla.org/en-US/firefox/addon/geoduels-enhancer/"
-          className="rounded-md bg-surface-fill px-3 py-1.5 text-label font-strong text-content-primary transition-colors hover:bg-surface-raised"
-        >
-          {outdated ? "Firefox update" : "Firefox setup"}
-        </a>
-      </div>
-    </div>
-  );
+function ExtensionInstallCallout({ status }: { status: ExtensionAvailabilityStatus }) {
+  return <div className="rounded-xl border border-border-default bg-surface-grouped p-3 text-center"><p className="text-body-sm text-content-secondary">{status.state === "outdated" ? "Your compatible AtlasRush extension needs an update." : "These options need a compatible AtlasRush extension. Moving mode works without an extension."}</p></div>;
 }
 
 function StreetNamesToggle({

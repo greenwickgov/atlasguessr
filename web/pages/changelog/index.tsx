@@ -25,15 +25,15 @@ function formatDate(value: string) {
 }
 
 export const getStaticProps = cachedPage<ChangelogIndexProps>(
-  async () => ({ posts: (await requestChangelogPosts()).posts || [] }),
+  async () => ({ posts: ((await requestChangelogPosts()).posts || []).filter(post => !post.title.includes("GeoDuels")) }),
   { posts: [] },
 );
 
 export default function ChangelogIndexPage({ posts }: ChangelogIndexProps) {
   const siteURL = useSiteURL();
-  const title = "GeoDuels Changelog";
+  const title = "AtlasRush Changelog";
   const description =
-    "Read GeoDuels release notes, gameplay updates, new features, and fixes.";
+    "Read AtlasRush release notes, gameplay updates, new features, and fixes.";
 
   return (
     <>
@@ -47,8 +47,9 @@ export default function ChangelogIndexPage({ posts }: ChangelogIndexProps) {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={`${siteURL}/changelog`} />
       </Head>
-      <DocumentPage eyebrow="Updates" title="GeoDuels Changelog">
+      <DocumentPage eyebrow="Updates" title="AtlasRush Changelog">
           <div className="mt-10 space-y-4">
+            <DocumentPanel as="article" className="p-5 sm:p-6"><time className="text-label text-status-success">14 November 2026</time><h2 className="mt-2 text-heading-lg font-strong">A new direction for AtlasRush</h2><p className="mt-3 text-body-sm text-content-secondary">A redesigned globe dashboard, direct access to Classic and private parties, clearer guest sessions, and refreshed AtlasRush navigation and branding.</p></DocumentPanel>
             {posts.map((post) => (
               <DocumentPanel key={post.id} as="article" className="p-5 sm:p-6">
                 <time dateTime={post.updatedAt} className="text-label font-strong text-status-success">

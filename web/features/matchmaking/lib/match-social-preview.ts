@@ -8,8 +8,8 @@ import {
 import { getTeamPresentation } from "../../../lib/team-presentation";
 
 const GENERIC_MATCH: SocialPreview = {
-  title: "GeoDuels | Match",
-  description: "View this GeoDuels match.",
+  title: "AtlasRush | Match",
+  description: "View this AtlasRush match.",
   canonicalPath: "/",
   robots: "noindex,nofollow",
   ...SOCIAL_ICON_IMAGE,
@@ -33,7 +33,7 @@ export function buildMatchSocialPreview(
     return {
       ...GENERIC_MATCH,
       canonicalPath,
-      description: "This GeoDuels match is live.",
+      description: "This AtlasRush match is live.",
     };
   }
   if (status !== "ended" || !snapshot) {
@@ -71,7 +71,7 @@ function matchCopy(snapshot: Snapshot) {
       const a = teamLabel(teams[0].teamId, teams[0].name);
       const b = teamLabel(teams[1].teamId, teams[1].name);
       return {
-        title: `${a} vs ${b} | GeoDuels`,
+        title: `${a} vs ${b} | AtlasRush`,
         description: joinParts([
           `${a} ${teams[0].hp ?? 0} HP`,
           `${b} ${teams[1].hp ?? 0} HP`,
@@ -89,7 +89,7 @@ function matchCopy(snapshot: Snapshot) {
   if (snapshot.mode === "singleplayer" && players[0]) {
     const score = (players[0].totalScore ?? 0).toLocaleString("en");
     return {
-      title: `${players[0].displayName} | GeoDuels`,
+      title: `${players[0].displayName} | AtlasRush`,
       description: joinParts([`${score} points`, ...suffix, "Practice"]),
     };
   }
@@ -98,7 +98,7 @@ function matchCopy(snapshot: Snapshot) {
     const a = players[0];
     const b = players[1];
     return {
-      title: `${a.displayName} vs ${b.displayName} | GeoDuels`,
+      title: `${a.displayName} vs ${b.displayName} | AtlasRush`,
       description: joinParts([
         `${a.displayName} ${a.hp} HP`,
         `${b.displayName} ${b.hp} HP`,
@@ -112,15 +112,15 @@ function matchCopy(snapshot: Snapshot) {
       .slice(0, 3)
       .map((player) => `${player.displayName} ${player.hp} HP`);
     return {
-      title: `${players[0].displayName} | GeoDuels`,
+      title: `${players[0].displayName} | AtlasRush`,
       description: joinParts([...standings, ...suffix]),
     };
   }
 
   return {
-    title: "GeoDuels | Match",
+    title: "AtlasRush | Match",
     description:
-      joinParts(["Finished match", ...suffix]) || "Finished GeoDuels match.",
+      joinParts(["Finished match", ...suffix]) || "Finished AtlasRush match.",
   };
 }
 

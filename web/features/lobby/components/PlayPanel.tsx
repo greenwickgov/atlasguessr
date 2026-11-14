@@ -1,30 +1,25 @@
 import type React from "react";
 import Link from "next/link";
 import { forwardRef } from "react";
-import { useShowAppNoticeOnValue } from "../../../components/ui/AppNotice";
-import { ArrowUpRight, CalendarDays, Compass, Globe2, Play, Swords } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowRight, Compass, Globe2, MapPinned, Play, Swords, Users, Sparkles } from "lucide-react";
+import { AppCardButton } from "../../../components/ui/compositions";
 import { Button } from "../../../components/ui/button";
-import { AppPanel } from "../../../components/ui/compositions";
-import { HorizontalScroller } from "../../../components/ui/HorizontalScroller";
-import { CenteredSpinner } from "../../../components/ui/Spinner";
-import { Eyebrow, Heading, SectionTitle } from "../../../components/ui/typography";
+import { useShowAppNoticeOnValue } from "../../../components/ui/AppNotice";
 import type { CustomMap } from "../../maps/lib/maps-client";
 import { mapThumbnailURL } from "../../maps/lib/map-thumbnails";
 import { MapCard } from "./maps/MapPanels";
 
-const panelMotion = {
-  initial: { opacity: 0, y: 16, scale: 0.97 },
-  animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: 10, scale: 0.97 },
-  transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
-};
+export function PlayModeActionButton({ tone, loading = false, children, className = "", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { tone: "duel" | "singleplayer"; loading?: boolean }) {
+  return <Button {...props} variant={tone === "duel" ? "primary" : "blue"} loading={loading} className={`atlas-button ar-mode-action w-full ${className}`} icon={<Play size={18} fill="currentColor" />}>{children}</Button>;
+}
 
-type PlayPanelProps = {
+type Props = {
   isSingleplayerLoading: boolean;
   queueError: string;
   onDuelsPlay: () => void;
   onSingleplayerPlay: () => void;
+  onPartyPlay: () => void;
+  playerName: string;
   duelDisabled: boolean;
   singleplayerDisabled: boolean;
   queuePaused: boolean;
@@ -39,229 +34,55 @@ type PlayPanelProps = {
   socialCard: React.ReactNode;
 };
 
-type PlayModeActionButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  tone: "duel" | "singleplayer";
-  loading?: boolean;
-};
-
-const playModeActionButtonClass =
-  "w-full min-h-[54px] rounded-2xl px-4 py-0 text-body leading-collapsed transition-transform hover:scale-[1.01] active:scale-[0.98]";
-
-export function PlayModeActionButton({
-  tone,
-  loading = false,
-  children,
-  className = "",
-  ...props
-}: PlayModeActionButtonProps) {
-  return (
-    <Button
-      {...props}
-      variant={tone === "duel" ? "primary" : "blue"}
-      className={`${playModeActionButtonClass} ${className}`}
-      loading={loading}
-      icon={<Play fill="currentColor" size={20} />}
-    >
-      {children}
-    </Button>
-  );
+function ExplorerGlobe() {
+  return <div className="ar-planet-scene" aria-hidden="true">
+    <div className="ar-orbit ar-orbit-one" /><div className="ar-orbit ar-orbit-two" />
+    <div className="ar-planet">
+      <svg viewBox="0 0 400 400" className="ar-land"><g fill="currentColor">
+        <path d="M65 73 107 52 145 65 164 93 152 116 168 135 151 159 121 158 111 190 89 184 77 152 46 135 34 105Z" />
+        <path d="m120 193 41-13 30 25 10 35-21 25-9 46-22 31-13-17 4-36-20-28-14-35Z" />
+        <path d="m199 86 26-21 25 12 8 17 33-6 38 29 32 4 15 30-35 15-16 27-24-3-6-28-29-9-9-24-24 4-10-20-22 5Z" />
+        <path d="m222 147 35 3 24 25 6 38-25 25-8 42-23-15-14-35-24-24-3-34Z" />
+        <path d="m314 268 33-12 28 18-5 32-37 10-23-22Z" /><path d="m154 33 25-10 15 18-14 24-25-7Z" />
+      </g></svg>
+      <div className="ar-globe-grid" /><div className="ar-planet-light" />
+      <span className="ar-world-pin ar-world-pin-one"><MapPinned size={24} /></span>
+      <span className="ar-world-pin ar-world-pin-two"><MapPinned size={18} /></span>
+    </div>
+    <div className="ar-planet-shadow" />
+    <span className="ar-coordinate ar-coordinate-one">FOLLOW THE CLUES</span><span className="ar-coordinate ar-coordinate-two">FIND YOUR WORLD</span>
+  </div>;
 }
 
-export const PlayPanel = forwardRef<HTMLDivElement, PlayPanelProps>(function PlayPanel({
-  isSingleplayerLoading,
-  queueError,
-  onDuelsPlay,
-  onSingleplayerPlay,
-  duelDisabled,
-  singleplayerDisabled,
-  queuePaused,
-  playPaused,
-  maintenanceIsActive,
-  primaryButtonLabel,
-  trendingMaps,
-  trendingMapsLoading,
-  changelogCard,
-  inboxCard,
-  donateCard,
-  socialCard,
-}, ref) {
-  return (
-    <motion.div
-      ref={ref}
-      key="play"
-      {...panelMotion}
-      className="atlas-lobby flex w-full max-w-6xl flex-col gap-8 pointer-events-auto sm:gap-10"
-    >
-      <section className="atlas-hero" aria-labelledby="atlas-hero-title">
-        <div className="atlas-hero-copy">
-          <Eyebrow>THE WORLD IS YOUR PLAYGROUND</Eyebrow>
-          <h1 id="atlas-hero-title">SMALL CLUES.<br /><span>BIG WORLD.</span></h1>
-          <p>Real streets. Unexpected places. Follow the clues and see how close you can get.</p>
-          <div className="atlas-hero-actions">
-            <Button variant="primary" size="lg" loading={isSingleplayerLoading} disabled={singleplayerDisabled} onClick={onSingleplayerPlay} icon={<Compass size={20} />}>LET’S EXPLORE</Button>
-            <Link href="/help" className="atlas-how-link">How to play <ArrowUpRight size={16} /></Link>
-          </div>
-        </div>
-        <span className="atlas-hero-caption"><Globe2 size={14} /> YOUR NEXT ADVENTURE IS OUT THERE</span>
-      </section>
-      <section>
-        <Heading as="h2" variant="heading-md" className="atlas-section-title mb-3">CHOOSE YOUR ADVENTURE</Heading>
-        <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <QueueModeCard
-            queueError={queueError}
-            onDuelsPlay={onDuelsPlay}
-            duelDisabled={duelDisabled}
-            queuePaused={queuePaused}
-            playPaused={playPaused}
-            maintenanceIsActive={maintenanceIsActive}
-            primaryButtonLabel={primaryButtonLabel}
-          />
-          <SingleplayerModeCard
-            isSingleplayerLoading={isSingleplayerLoading}
-            singleplayerDisabled={singleplayerDisabled}
-            playPaused={playPaused}
-            maintenanceIsActive={maintenanceIsActive}
-            onSingleplayerPlay={onSingleplayerPlay}
-          />
-          <DailyQuizModeCard />
-        </div>
-      </section>
-
-      <HorizontalScroller label="Trending Maps" itemClassName="w-80" viewAllHref="/maps">
-        {trendingMapsLoading ? (
-          <AppPanel className="flex h-44 w-80 items-center justify-center rounded-2xl">
-            <CenteredSpinner label="Loading trending maps" />
-          </AppPanel>
-        ) : trendingMaps.length ? (
-          trendingMaps.map((map) => (
-            <MapCard key={map.id} item={map} mode="link" showAuthor={false} thumbnailURL={(item) => mapThumbnailURL(item.thumbnailKey, item.thumbnailVariant)} />
-          ))
-        ) : (
-          <AppPanel className="flex h-44 w-80 items-center justify-center rounded-2xl p-5 text-center text-body-sm font-semibold text-content-secondary">
-            No trending maps yet.
-          </AppPanel>
-        )}
-      </HorizontalScroller>
-
-      <section>
-        <Heading as="h2" variant="heading-md" className="atlas-section-title mb-3">THE EXPLORER’S DESK</Heading>
-        <div className="grid w-full gap-4 sm:grid-cols-2">
-          <div className="min-w-0">{changelogCard}</div>
-          <div className="min-w-0">{inboxCard}</div>
-          {socialCard}
-          {donateCard}
-        </div>
-      </section>
-    </motion.div>
-  );
-});
-
-function QueueModeCard(props: {
-  queueError: string;
-  onDuelsPlay: () => void;
-  duelDisabled: boolean;
-  queuePaused: boolean;
-  playPaused: boolean;
-  maintenanceIsActive: boolean;
-  primaryButtonLabel: string;
-}) {
+export const PlayPanel = forwardRef<HTMLDivElement, Props>(function PlayPanel(props, ref) {
   useShowAppNoticeOnValue(props.queueError);
-  const paused = props.queuePaused || props.playPaused || props.maintenanceIsActive;
-  return (
-    <AppPanel className="atlas-mode-card lobby-feature-card relative flex min-h-[180px] w-full flex-col gap-4 rounded-2xl p-4 transition-colors duration-emphasis sm:p-5">
-      <div className="pointer-events-none absolute inset-0 bg-status-success/20 opacity-80 transition-opacity duration-emphasis" />
-      <ModeMountains active={false} />
-      <Swords className="atlas-mode-icon" aria-hidden="true" />
-      <ModeHeading eyebrow="Ranked multiplayer" title="DUELS" subtitle="Same place. Two players. One winner." eyebrowClassName="text-status-success" />
-
-      <div className="relative z-content flex w-full flex-col">
-        <PlayModeActionButton tone="duel" onClick={props.onDuelsPlay} disabled={props.duelDisabled}>
-          {paused ? "Paused" : props.primaryButtonLabel}
-        </PlayModeActionButton>
-      </div>
-    </AppPanel>
-  );
-}
-
-function SingleplayerModeCard(props: {
-  isSingleplayerLoading: boolean;
-  singleplayerDisabled: boolean;
-  playPaused: boolean;
-  maintenanceIsActive: boolean;
-  onSingleplayerPlay: () => void;
-}) {
-  return (
-    <AppPanel className="atlas-mode-card lobby-feature-card relative flex min-h-[180px] w-full flex-col gap-4 rounded-2xl p-4 transition-colors duration-emphasis sm:p-5" style={{ animationDelay: "-2s" }}>
-      <div className="pointer-events-none absolute inset-0 bg-status-info/20 opacity-80 transition-opacity duration-emphasis" />
-      <ModeMountains hueRotate active={false} />
-      <Compass className="atlas-mode-icon" aria-hidden="true" />
-      <ModeHeading eyebrow="Solo exploration" title="CLASSIC" subtitle="Take your time. Read the world." eyebrowClassName="text-status-info" />
-
-      <div className="relative z-content w-full">
-        <PlayModeActionButton
-          tone="singleplayer"
-          loading={props.isSingleplayerLoading}
-          onClick={props.onSingleplayerPlay}
-          disabled={props.singleplayerDisabled}
-        >
-          {props.isSingleplayerLoading ? "Loading..." : props.playPaused || props.maintenanceIsActive ? "Paused" : "Play"}
-        </PlayModeActionButton>
-      </div>
-    </AppPanel>
-  );
-}
-
-function DailyQuizModeCard() {
-  return (
-    <AppPanel className="atlas-mode-card lobby-feature-card relative flex min-h-[180px] w-full flex-col gap-4 rounded-2xl p-4 sm:p-5">
-      <div className="pointer-events-none absolute inset-0 bg-status-warning/20 opacity-80" />
-      <div className="relative z-content flex flex-1 flex-col justify-between gap-4">
-        <div>
-          <Eyebrow className="mb-1 text-status-warning">On the horizon</Eyebrow>
-          <SectionTitle className="text-content-primary drop-shadow-md">DAILY QUIZ</SectionTitle>
-        </div>
-        <Button type="button" variant="secondary" className={playModeActionButtonClass} icon={<CalendarDays size={20} />} disabled>
-          Coming soon
-        </Button>
-      </div>
-    </AppPanel>
-  );
-}
-
-function ModeMountains({ active, hueRotate = false }: { active: boolean; hueRotate?: boolean }) {
-  return (
-    <div className={`absolute inset-x-0 bottom-0 pointer-events-none h-full transition-opacity duration-emphasis ${active ? "opacity-25" : "opacity-30"}`}>
-      <img
-        src="/mountains.v1.svg"
-        alt=""
-        aria-hidden="true"
-        className={`absolute inset-0 h-full w-full object-cover object-center ${hueRotate ? "opacity-50" : ""}`}
-        style={{ objectPosition: "center bottom", filter: hueRotate ? "hue-rotate(190deg)" : undefined }}
-      />
+  const paused = props.playPaused || props.maintenanceIsActive;
+  return <div ref={ref} className="atlas-lobby ar-home">
+    <div className="ar-home-heading"><div><p className="ar-eyebrow">A LITTLE CURIOSITY. A WHOLE PLANET.</p><h1>{props.playerName ? `Welcome back, ${props.playerName}.` : "Your world awaits."}</h1></div><Link href="/help" className="ar-text-link">New here? Learn to play <ArrowRight size={15}/></Link></div>
+    <div className="ar-dashboard">
+      <aside className="ar-mode-rail" aria-label="Game modes">
+        <p className="ar-eyebrow">PICK YOUR ADVENTURE</p>
+        <AppCardButton type="button" className="ar-mode ar-mode-classic" onClick={props.onSingleplayerPlay} disabled={props.singleplayerDisabled}>
+          <span className="ar-mode-symbol"><Compass size={35}/></span><span className="ar-mode-tag">SINGLEPLAYER</span><strong>Classic</strong><span>Five rounds. One big world.</span><span className="ar-mode-link">{props.isSingleplayerLoading ? "Starting…" : paused ? "Play paused" : "Let's explore"}<ArrowRight size={17}/></span>
+        </AppCardButton>
+        <AppCardButton type="button" className="ar-mode ar-mode-party" onClick={props.onPartyPlay} disabled={props.singleplayerDisabled}>
+          <span className="ar-mode-symbol"><Users size={33}/></span><span className="ar-mode-tag">BETTER TOGETHER</span><strong>Play with friends</strong><span>Create a party. Share the adventure.</span><span className="ar-mode-link">Create or join<ArrowRight size={17}/></span>
+        </AppCardButton>
+        <AppCardButton type="button" className="ar-mode ar-mode-ranked" onClick={props.onDuelsPlay} disabled={props.duelDisabled}>
+          <span className="ar-mode-symbol"><Swords size={32}/></span><span className="ar-mode-tag">COMPETITIVE</span><strong>Ranked duels</strong><span>Go head to head. Climb the ranks.</span><span className="ar-mode-link">{props.queuePaused ? "Queue paused" : "Find a rival"}<ArrowRight size={17}/></span>
+        </AppCardButton>
+      </aside>
+      <section className="ar-world-stage" aria-labelledby="ar-world-title">
+        <span className="ar-stage-label"><Globe2 size={14}/> NO PASSPORT REQUIRED</span>
+        <ExplorerGlobe />
+        <div className="ar-world-copy"><h2 id="ar-world-title">Every road has a story.</h2><p>A mountain pass. A quiet street. A place you've never been.<br/>Look around, follow the clues, and put your pin on the map.</p><Button variant="primary" size="lg" className="ar-explore-button" onClick={props.onSingleplayerPlay} disabled={props.singleplayerDisabled} loading={props.isSingleplayerLoading} icon={<Play size={18} fill="currentColor"/>}>Explore the world</Button><span className="ar-stage-note">Free guest play · No account needed</span></div>
+      </section>
+      <aside className="ar-discovery-rail" aria-label="Explorer guide">
+        <Link className="ar-destination-card" href="/maps"><img src="/atlasrush/alps.jpg" alt="Mountain village beneath the Alps"/><div><span className="ar-eyebrow">TAKE THE SCENIC ROUTE</span><h2>Find your next<br/>favourite place.</h2><span className="ar-mode-link">Discover maps <ArrowRight size={17}/></span></div></Link>
+        <div className="ar-explorer-tip"><Sparkles size={22}/><p className="ar-eyebrow">EXPLORER TIP</p><h3>Start with the small things.</h3><p>Road signs, driving direction, plants and architecture can all point you in the right direction.</p><Link href="/help" className="ar-text-link">More ways to find your bearings <ArrowRight size={14}/></Link></div>
+        <div className="ar-session-note"><span className="ar-live-dot"/><div><strong>Ready when you are.</strong><p>Solo exploration and private parties are open to guests.</p></div></div>
+      </aside>
     </div>
-  );
-}
-
-function ModeHeading({
-  eyebrow,
-  title,
-  subtitle,
-  eyebrowClassName,
-}: {
-  eyebrow: string;
-  title: string;
-  subtitle?: string;
-  eyebrowClassName: string;
-}) {
-  return (
-    <div className="relative z-content flex flex-col">
-      <Eyebrow className={`mb-1 drop-shadow-sm ${eyebrowClassName}`}>
-        {eyebrow}
-      </Eyebrow>
-      <SectionTitle className="text-content-primary drop-shadow-md">
-        {title}
-      </SectionTitle>
-      {subtitle ? <span className="text-body font-medium text-content-primary drop-shadow-sm">{subtitle}</span> : null}
-    </div>
-  );
-}
+    <section className="ar-map-section" aria-labelledby="ar-maps-title"><div className="ar-section-heading"><div><p className="ar-eyebrow">GO SOMEWHERE NEW</p><h2 id="ar-maps-title">Maps worth getting lost in</h2></div><Link href="/maps" className="ar-text-link">Browse all maps <ArrowRight size={16}/></Link></div><div className="ar-map-grid">{props.trendingMapsLoading ? <p role="status">Finding your next adventure…</p> : props.trendingMaps.length ? props.trendingMaps.slice(0,4).map(map => <MapCard key={map.id} item={map} mode="link" showAuthor={false} thumbnailURL={item=>mapThumbnailURL(item.thumbnailKey,item.thumbnailVariant)}/>) : <p>No maps are available yet. Please check back soon.</p>}</div></section>
+  </div>;
+});

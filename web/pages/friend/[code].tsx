@@ -25,7 +25,7 @@ export default function FriendCodePage() {
   useShowAppNoticeWhen(request.isError, "Could not send the friend request. Try again.", request.failureCount);
   return (
     <>
-      <Head><title>Add a friend | GeoDuels</title><meta name="robots" content="noindex" /></Head>
+      <Head><title>Add a friend | AtlasRush</title><meta name="robots" content="noindex" /></Head>
       <AppContentRail as="main" size="compact" className="relative z-content py-10">
         <AppPanel className="rounded-2xl p-6">
           <PageHeader eyebrow="Social" title="Add a friend" description="Use a player’s private friend link to send a request." />

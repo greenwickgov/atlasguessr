@@ -14,8 +14,8 @@ export const getStaticProps = cachedPage(async (_context, queries) => {
 const MapsPage: NextPageWithLayout = function MapsPage() {
   return (
     <LobbyRoutePage
-      title="GeoDuels | Maps"
-      description="Browse official and community GeoDuels maps."
+      title="AtlasRush | Maps"
+      description="Browse official and community AtlasRush maps."
       canonicalPath="/maps"
     />
   );

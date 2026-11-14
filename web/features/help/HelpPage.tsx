@@ -32,10 +32,10 @@ export function HelpPage() {
   return (
     <>
       <Head>
-        <title>How to play | GeoDuels</title>
+        <title>How to play | AtlasRush</title>
         <meta
           name="description"
-          content="Learn the basics of GeoDuels matchmaking, guessing, scoring, and duel damage."
+          content="Learn the basics of AtlasRush matchmaking, guessing, scoring, and duel damage."
         />
       </Head>
       <AppContentRail
@@ -50,7 +50,7 @@ export function HelpPage() {
               Read the world. Beat the distance.
             </SectionTitle>
             <BodyText className="sm:text-heading-sm">
-              GeoDuels turns location guessing into quick head-to-head rounds.
+              AtlasRush turns location guessing into quick head-to-head rounds.
               Here is everything you need before entering your first match.
             </BodyText>
           </div>
@@ -77,7 +77,7 @@ export function HelpPage() {
           </div>
 
           <ButtonLink href="/" variant="primary" size="lg" className="rounded-xl">
-            Play GeoDuels
+            Play AtlasRush
           </ButtonLink>
         </AppPanel>
       </AppContentRail>

@@ -124,7 +124,7 @@ export function LobbyUpdatesPanel({
 export function LegalFooter({ appVersion }: { appVersion: string }) {
   return (
     <div className="pointer-events-auto atlas-legal flex w-full flex-col items-center justify-center gap-4 px-1 py-1">
-      <p className="text-caption text-content-secondary">AtlasRush · Based on <a href="https://github.com/sourcelocation/geoduels" target="_blank" rel="noreferrer">GeoDuels</a> · <Link href="/source">AGPL-3.0 source &amp; credits</Link> · <a href="https://sensa.co/emoji">Sensa Emoji</a></p>
+      <p className="text-caption text-content-secondary">AtlasRush · <Link href="/source">Open-source credits &amp; licences</Link></p>
       <div className="flex items-center gap-6">
         {[
           { href: "/help", label: "How to Play" },

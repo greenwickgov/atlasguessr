@@ -61,7 +61,7 @@ export default function AdminPage({ surface = "admin" }: { surface?: AdminSurfac
   return (
     <>
       <Head>
-        <title>GeoDuels | Staff</title>
+        <title>AtlasRush | Staff</title>
         <meta name="robots" content="noindex,nofollow" />
       </Head>
       <main data-ui-theme="operational" className="min-h-screen bg-surface-page text-content-primary">
@@ -69,7 +69,7 @@ export default function AdminPage({ surface = "admin" }: { surface?: AdminSurfac
           <aside className="border-r border-border-default bg-surface-page px-4 py-5">
             <Link href="/" className="mb-5 block rounded-lg border border-border-default bg-surface-panel p-4">
               <Text as="p" variant="label" className="text-status-success">
-                GeoDuels {consoleEyebrow}
+                AtlasRush {consoleEyebrow}
               </Text>
               <Heading as="h1" variant="heading-md" className="mt-1">{consoleTitle}</Heading>
             </Link>

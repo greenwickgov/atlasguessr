@@ -18,7 +18,7 @@ export function LobbyTutorialSection() {
             <SectionTitle
               id="geoduels-seo-heading"
             >
-              GeoDuels
+              AtlasRush
             </SectionTitle>
             <BodyText>
               A free GeoGuessr-inspired Street View game. Queue for ranked

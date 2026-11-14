@@ -12,8 +12,8 @@ export const getStaticProps = cachedPage(async (_context, queries) => {
 const TopPage: NextPageWithLayout = function TopPage() {
   return (
     <LobbyRoutePage
-      title="GeoDuels | Leaderboard"
-      description="Browse the GeoDuels ranked leaderboard."
+      title="AtlasRush | Leaderboard"
+      description="Browse the AtlasRush ranked leaderboard."
       canonicalPath="/top"
     />
   );

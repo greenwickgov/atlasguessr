@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Settings, Shield } from "lucide-react";
+import { MapPinned, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { createContext, useCallback, useContext, useEffect, useId, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -122,7 +122,7 @@ function AppShellHeader({
       <div className="app-shell-header-layout">
         <div className="flex min-w-0 items-center gap-3 sm:gap-5">
           <Link href="/" aria-label="AtlasRush home" className="inline-flex shrink-0">
-            <span className="atlas-wordmark"><span aria-hidden="true" className="atlas-brand-pin">◈</span> ATLAS<span>RUSH</span></span>
+            <span className="atlas-wordmark"><MapPinned aria-hidden="true" className="atlas-brand-pin" size={29} /> ATLAS<span>RUSH</span></span>
           </Link>
           {auth.status === "registered" && auth.roles.length > 0 ? (
             <Tooltip content="Staff" side="bottom">
@@ -141,7 +141,7 @@ function AppShellHeader({
 
         {auth.status === "bootstrapping" ? (
           <div aria-hidden="true" className="h-9 w-20 justify-self-end" />
-        ) : auth.status === "registered" ? (
+        ) : auth.userId ? (
           <div className="flex items-center gap-2.5">
             <Tooltip content="Settings" side="bottom">
               <AppChromeIconButton
@@ -223,7 +223,7 @@ function AppNavigation({
     const frame = window.requestAnimationFrame(() => {
       setVisualRoute(activeRoute);
       if (activeRoute) {
-        window.sessionStorage.setItem(appNavRouteStorageKey, activeRoute);
+        try { window.sessionStorage.setItem(appNavRouteStorageKey, activeRoute); } catch { /* Private browsing may block storage. */ }
       }
     });
     return () => window.cancelAnimationFrame(frame);

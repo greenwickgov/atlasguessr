@@ -17,7 +17,7 @@ export function SocialPreviewHead(preview: SocialPreview) {
       <meta name="robots" content={preview.robots} />
       <link rel="canonical" href={canonicalURL} />
       <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="GeoDuels" />
+      <meta property="og:site_name" content="AtlasRush" />
       <meta property="og:title" content={preview.title} />
       <meta property="og:description" content={preview.description} />
       <meta property="og:url" content={canonicalURL} />

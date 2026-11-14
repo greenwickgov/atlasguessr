@@ -20,7 +20,7 @@ import '../styles/globals.css';
 
 export type NextPageWithLayout<P = object, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
-  // The staff tools are the one thing that isn't inside GeoDuels' frame.
+  // The staff tools are the one thing that isn't inside AtlasRush' frame.
   surface?: "admin";
 };
 
@@ -46,9 +46,9 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   return (
     <SiteURLProvider value={pageProps.siteURL ?? ''}>
       <Head>
-        <link rel="icon" href="/icon.v1.png" type="image/png" />
-        <link rel="shortcut icon" href="/icon.v1.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/icon.v1.png" />
+        <link rel="icon" href="/atlasrush/icon.svg" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/atlasrush/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/atlasrush/icon.png" />
       </Head>
       <div className="font-body">
         <TooltipProvider>

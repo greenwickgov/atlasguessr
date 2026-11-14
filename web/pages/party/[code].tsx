@@ -18,10 +18,10 @@ const PartyInviteRoute: NextPageWithLayout = function PartyInviteRoute() {
     ? `${siteURL}/party/${encodeURIComponent(partyInviteCode)}`
     : `${siteURL}/`;
   const title = partyInviteCode
-    ? `GeoDuels | Party ${partyInviteCode}`
-    : "GeoDuels | Party";
+    ? `AtlasRush | Party ${partyInviteCode}`
+    : "AtlasRush | Party";
   const description =
-    "Join a private GeoDuels party, invite a friend or guest, and start a duel together.";
+    "Join a private AtlasRush party, invite a friend or guest, and start a duel together.";
 
   return (
     <Head>
@@ -30,7 +30,7 @@ const PartyInviteRoute: NextPageWithLayout = function PartyInviteRoute() {
       <meta name="robots" content="noindex,nofollow" />
       <link rel="canonical" href={canonicalURL} />
       <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="GeoDuels" />
+      <meta property="og:site_name" content="AtlasRush" />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonicalURL} />

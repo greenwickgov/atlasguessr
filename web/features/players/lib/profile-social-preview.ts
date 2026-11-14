@@ -26,7 +26,7 @@ export function buildProfileSocialPreview(
   );
   const avatar = publicImageURL(profile.avatarUrl);
   return {
-    title: `${profile.displayName} | GeoDuels`,
+    title: `${profile.displayName} | AtlasRush`,
     description: parts.join(" · "),
     canonicalPath: path,
     robots: "index,follow",

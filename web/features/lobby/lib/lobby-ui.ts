@@ -92,16 +92,7 @@ export function formatQueueElapsed(ms: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export function formatChangelogDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(date);
-}
+export { formatChangelogDate } from "./release-date";
 
 export function formatCommentAge(value: string) {
   return formatRelativeTime(value);
