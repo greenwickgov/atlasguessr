@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 WORKDIR /app
 COPY --from=backend-build /out/ /app/bin/
 COPY --from=proxy /usr/bin/caddy /app/bin/caddy
-COPY --from=events /nats-server /app/bin/nats-server
+COPY --from=events /usr/local/bin/nats-server /app/bin/nats-server
 COPY --from=web-build --chown=node:node /src/web/.next/standalone/ /app/web/
 COPY --from=web-build --chown=node:node /src/web/.next/static/ /app/web/.next/static/
 COPY --from=web-build --chown=node:node /src/web/public/ /app/web/public/
