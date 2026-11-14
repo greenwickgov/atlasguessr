@@ -10,7 +10,6 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
-    maxShutdownDelaySeconds: 30
     autoDeployTrigger: commit
     envVars:
       - key: POSTGRES_URL
