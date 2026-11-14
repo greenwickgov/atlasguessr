@@ -4,6 +4,26 @@ The repository's `render.yaml` runs the existing Go/Next.js application as one
 single-instance Docker web service with a managed PostgreSQL database in Singapore.
 It does not use Convex, which cannot execute these Go services.
 
+## Live installation
+
+Live URL: https://atlasrush-ni8z.onrender.com
+
+Verified on 14 November 2026 after deployment `dep-dbs1226k1f9s73806dlg`
+became live (application commit `a13824d85001d311b843f1a8df8f09bdc241872d`):
+
+- Homepage, database readiness endpoint, and public map catalogue.
+- Guest login, Secure/HttpOnly refresh cookie, and session restoration.
+- A complete five-round solo game, with panorama IDs, guesses, and result snapshots.
+- A two-player party/private duel, both gameplay sockets, and a shared final result.
+- Temporary test guests were deleted after verification.
+- Current Blueprint planning reports no infrastructure changes. Its dashboard
+  status retains the failed initial sync; the later service deployment is live.
+
+The two initial packaging failures were corrected in source: the NATS executable
+path and Caddy file capabilities. Caddy now runs without low-port capabilities
+as the unprivileged `node` user. Registered OAuth sign-in was not configured or
+tested. Ranked matchmaking and load capacity were not tested.
+
 ## What starts
 
 Database migrations run before the application. A process supervisor starts the
