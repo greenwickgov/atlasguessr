@@ -38,7 +38,12 @@ COPY --from=web-build --chown=node:node /src/web/.next/static/ /app/web/.next/st
 COPY --from=web-build --chown=node:node /src/web/public/ /app/web/public/
 COPY maps/datasets/a-source-world.sample.json /app/maps/world.sample.json
 COPY deploy/ /app/deploy/
-RUN chmod +x /app/deploy/start.sh
+# The upstream Caddy image grants low-port capabilities. Render's restricted
+# runtime rejects executing that file as non-root. A fresh copy drops xattrs;
+# this application binds to port 10000 and does not need those capabilities.
+RUN cp --no-preserve=xattr /app/bin/caddy /tmp/caddy \
+    && mv /tmp/caddy /app/bin/caddy \
+    && chmod +x /app/deploy/start.sh
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 ENV GOMAXPROCS=1 GOMEMLIMIT=64MiB
 ENV NODE_OPTIONS=--max-old-space-size=192
