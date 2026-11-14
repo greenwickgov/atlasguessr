@@ -151,7 +151,9 @@ function AppShellHeader({
                 <Settings size={18} aria-hidden="true" />
               </AppChromeIconButton>
             </Tooltip>
-            <Link
+            <AccountControl
+              guest={auth.isGuest}
+              onGuestClick={() => hotkeys?.setSettingsOpen(true)}
               href={`/players/${encodeURIComponent(auth.displayName || auth.userId)}`}
               className="group flex min-w-0 cursor-pointer items-center justify-self-end gap-2.5 sm:gap-3"
             >
@@ -162,7 +164,7 @@ function AppShellHeader({
                   selectedBadge={null}
                   nameClassName="text-body-sm font-strong leading-heading text-content-primary transition-colors group-hover:text-content-primary"
                 />
-                {typeof auth.mmr === "number" ? (
+                {auth.isGuest ? <span className="text-caption text-content-secondary">Guest explorer</span> : typeof auth.mmr === "number" ? (
                   <div className="mt-0.5 flex items-center">
                     <MmrDisplay
                       value={auth.mmr}
@@ -189,7 +191,7 @@ function AppShellHeader({
                 size="sm"
                 className="h-9 w-9 border-border-strong bg-surface-raised transition-colors group-hover:border-content-primary/40 sm:h-[42px] sm:w-[42px]"
               />
-            </Link>
+            </AccountControl>
           </div>
         ) : (
           <div className="pointer-events-auto justify-self-end">
@@ -201,6 +203,10 @@ function AppShellHeader({
       </div>
     </header>
   );
+}
+
+function AccountControl({ guest, onGuestClick, href, className, children }: { guest: boolean; onGuestClick: () => void; href: string; className: string; children: ReactNode }) {
+  return guest ? <Button variant="ghost" className={className} onClick={onGuestClick} aria-label="Guest account settings">{children}</Button> : <Link href={href} className={className}>{children}</Link>;
 }
 
 function AppNavigation({

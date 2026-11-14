@@ -10,3 +10,7 @@
 @media(prefers-reduced-motion:reduce){.ar-mode,.ar-destination-card img{transition:none}.ar-mode:hover:not(:disabled),.ar-destination-card:hover img{transform:none}}
 .ar-mode-action{min-height:48px}
 .ar-mode.ar-mode-classic{background:linear-gradient(130deg,#453473,#2b214b)}.ar-mode.ar-mode-party{background:linear-gradient(130deg,#246d75,#233f52)}.ar-mode.ar-mode-ranked{background:linear-gradient(130deg,#624145,#36263f)}
+/* The lobby rail is intentionally inert; its interactive dashboard opts in. */
+.ar-home{pointer-events:auto}
+@media(max-width:767px){.app-shell-navigation{position:fixed!important;top:auto!important;bottom:max(.75rem,env(safe-area-inset-bottom))!important;inset-inline:12px!important;max-width:100%!important}.atlas-shell-header{min-height:76px}.ar-home-heading{padding-top:3px}}
+@media(max-width:767px){.atlas-shell-header{backdrop-filter:none}.app-shell-header-layout{container-type:normal}}
